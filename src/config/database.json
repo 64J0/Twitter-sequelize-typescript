@@ -1,0 +1,11 @@
+{
+  "host": "localhost",
+  "username": "postgres",
+  "password": "docker",
+  "database": "twitterclone",
+  "dialect": "postgres",
+  "define": {
+    "timestamps": true,
+    "underscored": true
+  }
+}
