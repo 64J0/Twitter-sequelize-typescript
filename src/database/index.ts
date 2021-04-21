@@ -17,10 +17,10 @@ class PostgresDB {
       define: conf.define,
     });
 
-    this.init();
+    this.initModels();
   }
 
-  init() {
+  initModels() {
     User.initModel(this.connection);
   }
 }
