@@ -6,6 +6,37 @@ import User from "../database/models/User";
 import { defaultReturn } from "../@types/global";
 
 class UserController {
+  async findUserTweets(req: Request, res: Response): Promise<Response> {
+    try {
+      const { user_id } = req.params;
+
+      if (!user_id) {
+        return res.status(400).json({
+          message: "Param user_id not informed",
+          content: req.params,
+        });
+      }
+
+      const userTweets = await User.findByPk(user_id, {
+        include: { association: "account" },
+      });
+
+      if (!userTweets) {
+        return res.status(400).json({
+          message: "User tweets not found",
+          content: userTweets,
+        });
+      }
+
+      return res.status(200).json({ message: "Tweets found!", content: userTweets });
+    } catch (error) {
+      return res.status(500).json({
+        message: "Error creating user",
+        content: error,
+      });
+    }
+  }
+
   async createUser(req: Request, res: Response): Promise<Response> {
     try {
       const { name, email, password } = req.body;

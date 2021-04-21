@@ -1,10 +1,12 @@
 import { Router, Request, Response } from "express";
 
 import userRoutes from "./user.routes";
+import tweetRoutes from "./tweet.routes";
 
 const router = Router();
 
 router.use(userRoutes);
+router.use(tweetRoutes);
 
 router.route("*")
   .all((req: Request, res: Response) => {

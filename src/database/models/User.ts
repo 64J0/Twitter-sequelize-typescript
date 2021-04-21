@@ -1,7 +1,7 @@
 import { Sequelize, Model, DataTypes } from "sequelize";
 
 class User extends Model {
-  static initModel(connection: Sequelize) {
+  static initModel(connection: Sequelize): void {
     this.init({
       name: DataTypes.STRING,
       email: DataTypes.STRING,
@@ -9,6 +9,10 @@ class User extends Model {
     }, {
       sequelize: connection,
     });
+  }
+
+  static associateModel(models: Sequelize["models"]): void {
+    this.hasMany(models.Tweet, { foreignKey: "user_id", as: "account" });
   }
 }
 

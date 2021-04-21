@@ -1,6 +1,7 @@
 import { Sequelize, Dialect } from "sequelize";
 
 import User from "./models/User";
+import Tweet from "./models/Tweet";
 
 import conf from "../config/database.json";
 
@@ -18,10 +19,19 @@ class PostgresDB {
     });
 
     this.initModels();
+    this.associateModels();
   }
 
-  initModels() {
+  private initModels() {
+    console.log("Initializing models");
     User.initModel(this.connection);
+    Tweet.initModel(this.connection);
+  }
+
+  private associateModels() {
+    console.log("Associating models");
+    User.associateModel(this.connection.models);
+    Tweet.associateModel(this.connection.models);
   }
 }
 
