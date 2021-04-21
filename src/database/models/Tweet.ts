@@ -6,6 +6,7 @@ class Tweet extends Model {
       text: DataTypes.STRING,
     }, {
       sequelize: connection,
+      tableName: "tweets",
     });
   }
 
