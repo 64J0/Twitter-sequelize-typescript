@@ -7,10 +7,10 @@ const userController = new UserController();
 
 router.route("/v1/user")
   .post(userController.createUser)
-  .put(() => console.log("PUT"))
-  .delete(() => console.log("DELETE"));
+  .put(userController.updateUser);
 
 router.route("/v1/user/:user_id")
-  .get(userController.findUserTweets);
+  .get(userController.findUserTweets)
+  .delete(userController.deleteUser);
 
 export default router;

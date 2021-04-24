@@ -71,6 +71,7 @@ class TweetController {
         });
       }
 
+      // Verify if page can be converted to number
       if (isNaN(Number(page))) {
         return res.status(400).json({
           message: "Page param malformatted",

@@ -15,6 +15,7 @@ class User extends Model {
   static associateModel(models: Sequelize["models"]): void {
     this.hasMany(models.Tweet, { foreignKey: "user_id", as: "account" });
     this.hasMany(models.Like, { foreignKey: "user_id", as: "user" });
+    // this.belongsToMany(models.Tweet, { through: models.Like });
   }
 }
 

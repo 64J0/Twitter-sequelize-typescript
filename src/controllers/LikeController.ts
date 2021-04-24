@@ -73,6 +73,66 @@ class LikeController {
       return res.status(500).json({ message: "Internal server error", content: error });
     }
   }
+
+  async findLikedTweets(req: Request, res: Response): Promise<Response> {
+    const logger = new Logger().getLogger();
+    try {
+      const defaultQuantity = 20;
+      const { user_id, page = 0 } = req.params;
+      if (!user_id) {
+        return res.status(400).json({
+          message: "Request malformatted",
+          content: req.params,
+        });
+      }
+
+      // Verify if user exists
+      const user = await User.findByPk(user_id);
+      if (!user) {
+        return res.status(404).json({
+          message: "User not found",
+          content: req.body,
+        });
+      }
+
+      // Verify if page can be converted to number
+      if (isNaN(Number(page))) {
+        return res.status(400).json({
+          message: "Page param malformatted",
+          content: req.params,
+        });
+      }
+
+      const likedTweets = await Like.findAll({
+        attributes: [],
+        where: {
+          user_id,
+        },
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "name"],
+          }, {
+            model: Tweet,
+            as: "tweet",
+            attributes: ["id", "text", "user_id"],
+          },
+        ],
+        limit: defaultQuantity,
+        offset: Number(page) * defaultQuantity,
+        order: [["id", "DESC"]],
+      });
+
+      return res.status(200).json({
+        message: "Liked tweets found",
+        content: likedTweets,
+      });
+    } catch (error) {
+      logger.error(error);
+      return res.status(500).json({ message: "Internal server error", content: error });
+    }
+  }
 }
 
 export default LikeController;

@@ -1,30 +1,20 @@
-// Connection stores information about the following and followers of users
+// Connection stores information about the followers of a user
 
-import { DataTypes, Model, Sequelize } from "sequelize";
+import { Model, Sequelize } from "sequelize";
 
 class Connection extends Model {
   static initModel(sequelize: Sequelize): void {
-    this.init({
-      id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        allowNull: false,
-        autoIncrement: true,
-      },
-      user_follower: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      user_followed: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-    }, {
+    this.init({}, {
       sequelize,
       createdAt: true,
       updatedAt: true,
       tableName: "connections",
     });
+  }
+
+  static associateModel(models: Sequelize["models"]): void {
+    this.belongsTo(models.User, { foreignKey: "user_id", as: "user" });
+    this.hasMany(models.User, { foreignKey: "user_follower", as: "follower" });
   }
 }
 

@@ -13,6 +13,7 @@ class Tweet extends Model {
   static associateModel(models: Sequelize["models"]): void {
     this.belongsTo(models.User, { foreignKey: "user_id", as: "user" });
     this.hasMany(models.Like, { foreignKey: "tweet_id", as: "tweet" });
+    // this.belongsToMany(models.User, { through: models.Like });
   }
 }
 
