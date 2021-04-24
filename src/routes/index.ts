@@ -1,11 +1,13 @@
 import { Router, Request, Response } from "express";
 
 import userRoutes from "./user.routes";
+import likeRoutes from "./like.routes";
 import tweetRoutes from "./tweet.routes";
 
 const router = Router();
 
 router.use(userRoutes);
+router.use(likeRoutes);
 router.use(tweetRoutes);
 
 router.route("*")

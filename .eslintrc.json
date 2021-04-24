@@ -21,6 +21,7 @@
         "indent": ["error", 2],
         "new-cap": "off",
         "max-len": "off",
-        "camelcase": "off"
+        "camelcase": "off",
+        "valid-jsdoc": "off"
     }
 }

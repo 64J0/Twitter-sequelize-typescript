@@ -2,7 +2,7 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    return queryInterface.createTable("tweets", {
+    return queryInterface.createTable("likes", {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
@@ -18,9 +18,14 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
-      text: {
-        type: Sequelize.STRING(280),
+      tweet_id: {
+        type: Sequelize.INTEGER,
         allowNull: false,
+        references: {
+          model: "tweets", key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
       },
       created_at: {
         type: Sequelize.DATE,
@@ -34,6 +39,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    return queryInterface.dropTable("tweets");
+    return queryInterface.dropTable("likes");
   },
 };
