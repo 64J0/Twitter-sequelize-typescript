@@ -13,6 +13,7 @@ class PostgresDB {
   constructor() {
     this.connection = new Sequelize({
       host: conf.host,
+      port: conf.port,
       username: conf.username,
       password: conf.password,
       database: conf.database,

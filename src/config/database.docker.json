@@ -1,6 +1,6 @@
 {
-  "host": "localhost",
-  "port": 5432,
+  "host": "db",
+  "port": 35432,
   "username": "postgres",
   "password": "docker",
   "database": "twitterclone",

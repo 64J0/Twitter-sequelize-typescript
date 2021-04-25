@@ -29,11 +29,32 @@ npm start
 
 # Start application in dev environment:
 npm run dev
+
+# ///////////////////////////
+# DOCKER:
+#
+# Build the image locally:
+docker build . -t <your username>/twitter-sql-ts
+
+# Run the image:
+docker run -p 49160:8080 -d <your username>/twitter-sql-ts
+
+# Remove image:
+docker rmi <image_id>
+
+# Remove container:
+docker rm <container_id>
 ```
 
 ### References:
 
 [1] - https://www.hiredintech.com/classrooms/system-design/lesson/67
+
+[2] - https://nodejs.org/en/docs/guides/nodejs-docker-webapp/ -> For Dockerfile
+
+[3] - https://www.digitalocean.com/community/tutorials/como-construir-uma-aplicacao-node-js-com-o-docker-pt -> For Dockerfile
+
+[4] - https://stackoverflow.com/questions/60014874/how-to-use-typescript-with-sequelize
 
 ---
 
