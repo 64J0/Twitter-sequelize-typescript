@@ -37,6 +37,7 @@ class PostgresDB {
     User.associateModel(this.connection.models);
     Like.associateModel(this.connection.models);
     Tweet.associateModel(this.connection.models);
+    Connection.associateModel(this.connection.models);
   }
 }
 

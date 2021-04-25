@@ -2,7 +2,7 @@ import winston from "winston";
 import path from "path";
 
 class Logger {
-  logger: winston.Logger;
+  private logger: winston.Logger;
 
   constructor() {
     this.logger = winston.createLogger({

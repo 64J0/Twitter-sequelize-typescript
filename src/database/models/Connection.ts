@@ -14,7 +14,7 @@ class Connection extends Model {
 
   static associateModel(models: Sequelize["models"]): void {
     this.belongsTo(models.User, { foreignKey: "user_id", as: "user" });
-    this.hasMany(models.User, { foreignKey: "user_follower", as: "follower" });
+    this.belongsTo(models.User, { foreignKey: "user_follower", as: "follower" });
   }
 }
 
