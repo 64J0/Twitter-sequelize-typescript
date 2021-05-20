@@ -1,10 +1,9 @@
-import { Request, Response } from "express";
-import { Op } from "sequelize";
-
-import User from "../database/models/User";
+import PostgresDB from "../database";
+import UserRepo from "../database/repositories/User.repo";
 import Logger from "../utils/Logger";
 
-import { defaultReturn } from "../@types/global";
+import { Request, Response } from "express";
+import { UserModel } from "../@types/database/models/User";
 
 class UserController {
   /**
@@ -22,9 +21,7 @@ class UserController {
         });
       }
 
-      const userTweets = await User.findByPk(user_id, {
-        include: { association: "account" },
-      });
+      const userTweets = await UserRepo.getUserByPK(user_id);
       if (!userTweets) {
         return res.status(400).json({
           message: "User tweets not found",
@@ -47,6 +44,8 @@ class UserController {
    * duplicated.
    */
   async createUser(req: Request, res: Response): Promise<Response> {
+    const transaction = await PostgresDB.connection.transaction();
+
     try {
       const { name, email, password } = req.body;
 
@@ -57,7 +56,7 @@ class UserController {
         });
       }
 
-      const { status, content: foundUser } = await UserController.checkUserExists(name, email);
+      const { status, content: foundUser } = await UserRepo.checkUserExists(name, email);
       if (status === "SUCCESS") {
         return res.status(400).json({
           message: "Credentials already in use",
@@ -65,12 +64,14 @@ class UserController {
         });
       }
 
-      const user = await User.create({
+      const user = await UserRepo.createUser({
         name, email, password,
-      });
+      }, transaction);
 
+      await transaction.commit();
       return res.status(200).json({ message: "User created", content: user });
     } catch (error) {
+      await transaction.rollback(); // rollback if any error is thrown
       return res.status(500).json({
         message: "Error creating user",
         content: error,
@@ -82,7 +83,9 @@ class UserController {
    * @description This function is used to delete an user account in the database.
    */
   async deleteUser(req: Request, res: Response): Promise<Response> {
+    const transaction = await PostgresDB.connection.transaction();
     const logger = new Logger().getLogger();
+
     try {
       const { user_id } = req.params;
       if (!user_id) {
@@ -92,13 +95,13 @@ class UserController {
         });
       }
 
-      await User.destroy({
-        where: { id: user_id },
-      });
+      await UserRepo.deleteUser(user_id, transaction);
 
+      await transaction.commit();
       return res.status(200).json({ message: "User destroyed", content: null });
     } catch (error) {
       logger.error(error);
+      await transaction.rollback(); // rollback if any error is thrown
       return res.status(500).json({ message: "Internal server error", content: error });
     }
   }
@@ -109,7 +112,9 @@ class UserController {
    * informations.
    */
   async updateUser(req: Request, res: Response): Promise<Response> {
+    const transaction = await PostgresDB.connection.transaction();
     const logger = new Logger().getLogger();
+
     try {
       const { user_id, name, email, password } = req.body;
       if (!user_id || !name || !email || !password) {
@@ -119,49 +124,23 @@ class UserController {
         });
       }
 
-      const { status, content: foundUser } = await UserController.checkUserExists(name, email);
-      if (status === "SUCCESS" && (foundUser as User).getDataValue("id") !== user_id) {
+      const { status, content: foundUser } = await UserRepo.checkUserExists(name, email);
+      if (status === "SUCCESS" && (foundUser as UserModel).getDataValue("id") !== user_id) {
         return res.status(400).json({
           message: "Credentials already in use",
           content: foundUser,
         });
       }
 
-      const userUpdated = await User.update({
-        ...req.body,
-      }, {
-        where: {
-          id: user_id,
-        },
-      });
+      const userUpdated = await UserRepo.updateUser(req.body, transaction);
+
+      await transaction.commit();
       return res.status(200).json({ message: "User updated", content: userUpdated });
     } catch (error) {
       logger.error(error);
+      await transaction.rollback(); // rollback if any error is thrown
       return res.status(500).json({ message: "Internal server error", content: error });
     }
-  }
-
-  static async checkUserExists(name: string, email: string): Promise<defaultReturn<User>> {
-    const foundUser = await User.findOne({
-      where: {
-        [Op.or]: {
-          name,
-          email,
-        },
-      },
-    });
-
-    if (!foundUser) {
-      return {
-        status: "FAIL",
-        content: null,
-      };
-    }
-
-    return {
-      status: "SUCCESS",
-      content: foundUser,
-    };
   }
 }
 

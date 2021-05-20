@@ -42,4 +42,4 @@ class PostgresDB {
   }
 }
 
-export default PostgresDB;
+export default new PostgresDB(); // singleton (node cache)
