@@ -67,6 +67,7 @@ class TweetController {
   async findTweets(req: Request, res: Response): Promise<Response> {
     const transaction = await PostgresDB.connection.transaction();
     const logger = new Logger().getLogger();
+
     try {
       const defaultQuantity = 20;
       const { user_id, page = 0 } = req.params;

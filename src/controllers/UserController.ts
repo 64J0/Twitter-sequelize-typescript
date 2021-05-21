@@ -21,7 +21,7 @@ class UserController {
         });
       }
 
-      const userTweets = await UserRepo.getUserByPK(user_id);
+      const userTweets = await UserRepo.getByPk(user_id);
       if (!userTweets) {
         return res.status(400).json({
           message: "User tweets not found",

@@ -19,7 +19,7 @@ class UserRepo {
    * @description This function is used to find the user registry in the database
    * searching through the primary key (PK)
    */
-  async getUserByPK(user_id: string): Promise<UserModel> {
+  async getByPk(user_id: string): Promise<UserModel> {
     return UserModel.findByPk(user_id, {
       include: { association: "account" },
     });

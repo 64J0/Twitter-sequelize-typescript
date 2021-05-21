@@ -38,6 +38,10 @@ class TweetRepo {
       transaction,
     });
   }
+
+  async getByPk(tweet_id: string): Promise<TweetModel> {
+    return TweetModel.findByPk(tweet_id);
+  }
 }
 
 export default new TweetRepo();

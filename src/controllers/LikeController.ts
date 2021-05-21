@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { Op } from "sequelize";
 
-import User from "../database/models/User";
-import Like from "../database/models/Like";
-import Tweet from "../database/models/Tweet";
+import PostgresDB from "../database";
+import TweetRepo from "../database/repositories/Tweet.repo";
+import LikeRepo from "../database/repositories/Like.repo";
+import UserRepo from "../database/repositories/User.repo";
 import Logger from "../utils/Logger";
 
 class LikeController {
@@ -13,7 +13,9 @@ class LikeController {
    * same tweet again then the data in the table must be deleted.
    */
   async updateLikeTweet(req: Request, res: Response): Promise<Response> {
+    const transaction = await PostgresDB.connection.transaction();
     const logger = new Logger().getLogger();
+
     try {
       const { user_id, tweet_id } = req.body;
       if (!user_id || !tweet_id) {
@@ -24,7 +26,7 @@ class LikeController {
       }
 
       // Verify if user exists
-      const user = await User.findByPk(user_id);
+      const user = await UserRepo.getByPk(user_id);
       if (!user) {
         return res.status(404).json({
           message: "User not found",
@@ -33,7 +35,7 @@ class LikeController {
       }
 
       // Verify if tweet exists
-      const tweet = await Tweet.findByPk(tweet_id);
+      const tweet = await TweetRepo.getByPk(tweet_id);
       if (!tweet) {
         return res.status(404).json({
           message: "Tweet not found",
@@ -42,40 +44,36 @@ class LikeController {
       }
 
       // Verify if the tweet has already been liked
-      const likeFound = await Like.findOne({
-        where: {
-          [Op.and]: {
-            user_id,
-            tweet_id,
-          },
-        },
+      const likeFound = await LikeRepo.get({
+        user_id,
+        tweet_id,
       });
 
       if (likeFound) {
-        await Like.destroy({
-          where: {
-            [Op.and]: {
-              user_id,
-              tweet_id,
-            },
-          },
-        });
-      } else {
-        await Like.create({
+        await LikeRepo.delete({
           user_id,
           tweet_id,
-        });
+        }, transaction);
+      } else {
+        await LikeRepo.create({
+          user_id,
+          tweet_id,
+        }, transaction);
       }
 
+      await transaction.commit();
       return res.status(200).json({ message: "Like updated", content: null });
     } catch (error) {
       logger.error(error);
+      await transaction.rollback();
       return res.status(500).json({ message: "Internal server error", content: error });
     }
   }
 
   async findLikedTweets(req: Request, res: Response): Promise<Response> {
+    const transaction = await PostgresDB.connection.transaction();
     const logger = new Logger().getLogger();
+
     try {
       const defaultQuantity = 20;
       const { user_id, page = 0 } = req.params;
@@ -87,7 +85,7 @@ class LikeController {
       }
 
       // Verify if user exists
-      const user = await User.findByPk(user_id);
+      const user = await UserRepo.getByPk(user_id);
       if (!user) {
         return res.status(404).json({
           message: "User not found",
@@ -103,33 +101,20 @@ class LikeController {
         });
       }
 
-      const likedTweets = await Like.findAll({
-        attributes: [],
-        where: {
-          user_id,
-        },
-        include: [
-          {
-            model: User,
-            as: "user",
-            attributes: ["id", "name"],
-          }, {
-            model: Tweet,
-            as: "tweet",
-            attributes: ["id", "text", "user_id"],
-          },
-        ],
-        limit: defaultQuantity,
-        offset: Number(page) * defaultQuantity,
-        order: [["id", "DESC"]],
-      });
+      const likedTweets = await LikeRepo.getAll({
+        user_id,
+        defaultQuantity,
+        page,
+      }, transaction);
 
+      await transaction.commit();
       return res.status(200).json({
         message: "Liked tweets found",
         content: likedTweets,
       });
     } catch (error) {
       logger.error(error);
+      await transaction.rollback();
       return res.status(500).json({ message: "Internal server error", content: error });
     }
   }
