@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { Op } from "sequelize";
 
-import Connection from "../database/models/Connection";
-import User from "../database/models/User";
+import PostgresDB from "../database";
+import UserRepo from "../database/repositories/User.repo";
+import ConnectionRepo from "../database/repositories/Connection.repo";
 import Logger from "../utils/Logger";
 
 class ConnectionController {
@@ -12,7 +12,9 @@ class ConnectionController {
    * that both the target user and the shoot user exists.
    */
   async follow(req: Request, res: Response): Promise<Response> {
+    const transaction = await PostgresDB.connection.transaction();
     const logger = new Logger().getLogger();
+
     try {
       const { user_id, user_follower } = req.body;
       if (!user_id || !user_follower) {
@@ -29,7 +31,7 @@ class ConnectionController {
         });
       }
 
-      const shootUser = await User.findByPk(user_id);
+      const shootUser = await UserRepo.getByPk(user_id);
       if (!shootUser) {
         return res.status(400).json({
           message: "Shoot user not exists",
@@ -37,7 +39,7 @@ class ConnectionController {
         });
       }
 
-      const targetUser = await User.findByPk(user_follower);
+      const targetUser = await UserRepo.getByPk(user_follower);
       if (!targetUser) {
         return res.status(400).json({
           message: "Target user not exists",
@@ -45,25 +47,20 @@ class ConnectionController {
         });
       }
 
-      await Connection.findOrCreate({
-        where: {
-          [Op.and]: {
-            user_id,
-            user_follower,
-          },
-        },
-        defaults: {
-          user_id,
-          user_follower,
-        },
-      });
+      await ConnectionRepo.findOrCreate(
+        user_id,
+        user_follower,
+        transaction,
+      );
 
+      await transaction.commit();
       return res.status(200).json({
         message: `User ${user_id} followed ${user_follower}`,
         content: null,
       });
     } catch (error) {
       logger.error(error);
+      await transaction.rollback();
       return res.status(500).json({ message: "Internal server error", content: error });
     }
   }
@@ -73,6 +70,7 @@ class ConnectionController {
    */
   async getFollowers(req: Request, res: Response): Promise<Response> {
     const logger = new Logger().getLogger();
+
     try {
       const { user_id } = req.params;
       if (!user_id) {
@@ -82,15 +80,7 @@ class ConnectionController {
         });
       }
 
-      const followers = await Connection.findAll({
-        where: {
-          user_id,
-        },
-        include: {
-          model: User,
-          as: "follower",
-        },
-      });
+      const followers = await ConnectionRepo.getAll(user_id);
 
       return res.status(200).json({ message: "Followers found", content: followers });
     } catch (error) {
@@ -104,6 +94,7 @@ class ConnectionController {
    */
   async getFollowsCount(req: Request, res: Response): Promise<Response> {
     const logger = new Logger().getLogger();
+
     try {
       const { user_id } = req.params;
       if (!user_id) {
@@ -113,11 +104,7 @@ class ConnectionController {
         });
       }
 
-      const followersCount = await Connection.count({
-        where: {
-          user_id,
-        },
-      });
+      const followersCount = await ConnectionRepo.getQuantity(user_id);
 
       return res.status(200).json({ message: "Followers found", content: followersCount });
     } catch (error) {
