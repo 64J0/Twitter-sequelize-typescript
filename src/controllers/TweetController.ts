@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 
-import User from "../database/models/User";
-import Tweet from "../database/models/Tweet";
+import PostgresDB from "../database";
+import TweetRepo from "../database/repositories/Tweet.repo";
+import UserRepo from "../database/repositories/User.repo";
 import Logger from "../utils/Logger";
 
 // Um usuário não pode curtir o próprio tweet
@@ -13,6 +14,8 @@ class TweetController {
    * account through the user_id information.
    */
   async createTweet(req: Request, res: Response): Promise<Response> {
+    const transaction = await PostgresDB.connection.transaction();
+
     try {
       const { user_id, text } = req.body;
 
@@ -32,7 +35,7 @@ class TweetController {
         });
       }
 
-      const user = await User.findByPk(user_id);
+      const user = await UserRepo.getUserByPK(user_id);
       if (!user) {
         // Not found
         return res.status(404).json({
@@ -41,15 +44,17 @@ class TweetController {
         });
       }
 
-      const tweet = await Tweet.create({
+      const tweet = await TweetRepo.create({
         user_id,
         text,
-      });
+      }, transaction);
 
       // Ok
+      await transaction.commit();
       return res.status(200).json({ message: "Tweet created", content: tweet });
     } catch (error) {
       // Internal server error
+      await transaction.rollback();
       return res.status(500).json({ message: "Internal server error", content: error });
     }
   }
@@ -60,6 +65,7 @@ class TweetController {
    * the algorithm performs a query in the database to find 20 last tweets of the user with a specific offset.
    */
   async findTweets(req: Request, res: Response): Promise<Response> {
+    const transaction = await PostgresDB.connection.transaction();
     const logger = new Logger().getLogger();
     try {
       const defaultQuantity = 20;
@@ -79,7 +85,7 @@ class TweetController {
         });
       }
 
-      const user = await User.findByPk(user_id);
+      const user = await UserRepo.getUserByPK(user_id);
       if (!user) {
         // Not found
         return res.status(404).json({
@@ -88,27 +94,20 @@ class TweetController {
         });
       }
 
-      const tweets = await Tweet.findAll({
-        attributes: ["id", "text"],
-        where: {
-          user_id: user.getDataValue("id"),
-        },
-        include: {
-          model: User,
-          as: "user",
-          attributes: ["id", "name"],
-        },
-        limit: defaultQuantity,
-        offset: Number(page) * defaultQuantity,
-        order: [["id", "DESC"]],
-      });
+      const tweets = await TweetRepo.findAll({
+        user_id,
+        defaultQuantity,
+        page,
+      }, transaction);
 
+      await transaction.commit();
       return res.status(200).json({
         message: "Tweets found",
         content: tweets,
       });
     } catch (error) {
       logger.error(error);
+      await transaction.rollback();
       return res.status(500).json({ message: "Internal server error", content: error });
     }
   }
